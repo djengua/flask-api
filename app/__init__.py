@@ -6,6 +6,7 @@ from flask_bcrypt import Bcrypt
 from datetime import timedelta
 import os
 from dotenv import load_dotenv
+import sys
 
 # Cargar variables de entorno
 load_dotenv()
