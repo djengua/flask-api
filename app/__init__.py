@@ -4,6 +4,7 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 from datetime import timedelta
+from flask_cors import CORS
 import os
 import sys
 
@@ -16,11 +17,15 @@ database_url = None
 # Inicializar Flask
 app = Flask(__name__)
 
-# IMPORTANTE: Railway proporciona la variable DATABASE_URL
+CORS(app, resources={r"/api/*": {
+    "origins": ["https://djengua.com", "http://localhost:8080"],
+    "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    "allow_headers": ["Content-Type", "Authorization"]
+}})
+
 database_url = os.environ.get('DATABASE_URL')
 
 if database_url:
-    # Railway usa postgres:// pero SQLAlchemy necesita postgresql://
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
 
