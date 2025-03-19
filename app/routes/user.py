@@ -9,9 +9,7 @@ users_bp = Blueprint('users', __name__)
 @users_bp.route('/me', methods=['GET'])
 @jwt_required()
 def get_current_user():
-    print('me')
     user_id = get_jwt_identity()
-    print(user_id)
     user = User.query.get(user_id)
 
     if not user:
@@ -25,9 +23,8 @@ def get_current_user():
         'active': user.active
     }), 200
 
+
 # Obtener todos los usuarios (para administradores)
-
-
 @users_bp.route('/all', methods=['GET'])
 @jwt_required()
 def get_all_users():
@@ -45,9 +42,8 @@ def get_all_users():
 
     return jsonify(user_list), 200
 
+
 # Obtener usuario por ID
-
-
 @users_bp.route('/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_user(user_id):
@@ -64,9 +60,8 @@ def get_user(user_id):
         'active': user.active
     }), 200
 
+
 # Actualizar usuario
-
-
 @users_bp.route('/<int:user_id>', methods=['PUT'])
 @jwt_required()
 def update_user(user_id):
@@ -112,9 +107,8 @@ def update_user(user_id):
         'active': user.active
     }), 200
 
+
 # Eliminar usuario
-
-
 @users_bp.route('/<int:user_id>', methods=['DELETE'])
 @jwt_required()
 def delete_user(user_id):

@@ -18,16 +18,13 @@ app = Flask(__name__)
 
 # IMPORTANTE: Railway proporciona la variable DATABASE_URL
 database_url = os.environ.get('DATABASE_URL')
-print('si')
-print('database_url')
-print(database_url)
+
 if database_url:
     # Railway usa postgres:// pero SQLAlchemy necesita postgresql://
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
 
-    print(
-        f"Usando URL de base de datos desde variables de entorno: {database_url}")
+    print("Usando URL de base de datos desde variables de entorno: OK")
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 else:
     # Configuración manual como respaldo
@@ -39,7 +36,7 @@ else:
     DB_NAME = os.environ.get('DB_NAME', 'user_api')
 
     manual_url = f'postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-    print(f"URL manual: {manual_url}")
+    print("URL manual: OK")
     app.config['SQLALCHEMY_DATABASE_URI'] = manual_url
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -47,21 +44,13 @@ app.config['JWT_SECRET_KEY'] = os.environ.get(
     'JWT_SECRET_KEY', 'super-secret-key-change-in-production')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
 
-print(f"URL final de base de datos: {app.config['SQLALCHEMY_DATABASE_URI']}")
+print("URL final de base de datos: OK")
 
 # Inicializar extensiones
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
 migrate = Migrate(app, db)
 bcrypt = Bcrypt(app)
-
-# Manejo seguro de inicialización de base de datos
-try:
-    with app.app_context():
-        db.create_all()
-        print("Base de datos inicializada correctamente")
-except Exception as e:
-    print(f"Error al inicializar la base de datos: {str(e)}")
 
 
 @app.route('/')
