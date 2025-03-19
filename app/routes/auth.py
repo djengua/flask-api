@@ -1,7 +1,7 @@
 from flask import request, jsonify, Blueprint
 from flask_jwt_extended import create_access_token
 from app import bcrypt, db
-from app.models.user import User
+from app.models.users import User
 
 
 @app.route('/api/register', methods=['POST'])
