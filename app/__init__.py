@@ -16,25 +16,11 @@ app = Flask(__name__)
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
-if DATABASE_URL:
-    # Railway usa 'postgres://' pero SQLAlchemy necesita 'postgresql://'
-    if DATABASE_URL.startswith("postgres://"):
-        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-    app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
-    print(
-        f"Usando DATABASE_URL de las variables de entorno: {DATABASE_URL}", file=sys.stderr)
-else:
-    # Configuración manual como respaldo
-    DB_USER = os.getenv('DB_USER', 'postgres')
-    DB_PASS = os.getenv('DB_PASS', 'postgres')
-    DB_HOST = os.getenv('DB_HOST', 'localhost')
-    DB_PORT = os.getenv('DB_PORT', '5432')
-    DB_NAME = os.getenv('DB_NAME', 'user_api')
-
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-    print(
-        f"Usando configuración manual de base de datos: {app.config['SQLALCHEMY_DATABASE_URI']}", file=sys.stderr)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
+    'DATABASE_URL', 'postgresql://username:password@localhost/api')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+print(
+    f"Usando configuración manual de base de datos: {app.config['SQLALCHEMY_DATABASE_URI']}", file=sys.stderr)
 
 
 # Inicializar extensiones
