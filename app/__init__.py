@@ -7,6 +7,54 @@ from datetime import timedelta
 import os
 import sys
 
+import os
+import sys
+
+# Imprimir todas las variables de entorno (ocultando valores sensibles)
+print("=== VARIABLES DE ENTORNO DISPONIBLES ===")
+for key in os.environ:
+    if key in ['DATABASE_URL', 'JWT_SECRET_KEY']:
+        print(f"{key}: ***valor oculto***")
+    else:
+        print(f"{key}: {os.environ[key]}")
+print("=======================================")
+
+# Intenta leer la variable DATABASE_URL de múltiples formas
+database_url = None
+
+# Método 1: Directamente del diccionario os.environ
+if 'DATABASE_URL' in os.environ:
+    database_url = os.environ['DATABASE_URL']
+    print(f"Método 1 exitoso: DATABASE_URL encontrada")
+
+# Método 2: Usando os.environ.get
+if not database_url:
+    database_url = os.environ.get('DATABASE_URL')
+    if database_url:
+        print(f"Método 2 exitoso: DATABASE_URL encontrada con os.environ.get")
+
+# Método 3: Probar con un nombre alternativo (a veces Railway usa nombres diferentes)
+if not database_url:
+    for key in os.environ:
+        if 'DATABASE' in key or 'POSTGRES' in key:
+            database_url = os.environ[key]
+            print(f"Método 3 exitoso: Variable similar encontrada: {key}")
+            break
+
+# Usar la URL encontrada o la configuración manual como último recurso
+if database_url:
+    # Asegurarse de que usa postgresql:// en lugar de postgres://
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
+    print(
+        f"Usando URL de base de datos (parcial): {database_url[:15]}...{database_url[-15:]}")
+else:
+    # Configuración manual como último recurso
+    database_url = 'postgresql://postgres:nrlScpKvvuefyzFCzmCTVbYJcfgwZJHM@switchyard.proxy.rlwy.net:57819/railway'
+    print("No se pudo encontrar DATABASE_URL, usando URL hardcodeada como último recurso")
+
+
 # Imprimir todas las variables de entorno disponibles para depuración
 print("==== VARIABLES DE ENTORNO ====")
 for key in os.environ:
