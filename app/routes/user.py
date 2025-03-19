@@ -3,11 +3,15 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db, bcrypt
 from app.models.users import User
 
+users_bp = Blueprint('users', __name__)
 
-@app.route('/api/user/me', methods=['GET'])
+
+@users_bp.route('/me', methods=['GET'])
 @jwt_required()
 def get_current_user():
+    print('me')
     user_id = get_jwt_identity()
+    print(user_id)
     user = User.query.get(user_id)
 
     if not user:
@@ -24,7 +28,7 @@ def get_current_user():
 # Obtener todos los usuarios (para administradores)
 
 
-@app.route('/api/users', methods=['GET'])
+@users_bp.route('/all', methods=['GET'])
 @jwt_required()
 def get_all_users():
     users = User.query.all()
@@ -36,7 +40,7 @@ def get_all_users():
             'email': user.email,
             'name': user.name,
             'lastname': user.lastname,
-            'active': user.is_active
+            'active': user.active
         })
 
     return jsonify(user_list), 200
@@ -44,7 +48,7 @@ def get_all_users():
 # Obtener usuario por ID
 
 
-@app.route('/api/users/<int:user_id>', methods=['GET'])
+@users_bp.route('/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_user(user_id):
     user = User.query.get(user_id)
@@ -63,7 +67,7 @@ def get_user(user_id):
 # Actualizar usuario
 
 
-@app.route('/api/users/<int:user_id>', methods=['PUT'])
+@users_bp.route('/<int:user_id>', methods=['PUT'])
 @jwt_required()
 def update_user(user_id):
     current_user_id = get_jwt_identity()
@@ -111,7 +115,7 @@ def update_user(user_id):
 # Eliminar usuario
 
 
-@app.route('/api/users/<int:user_id>', methods=['DELETE'])
+@users_bp.route('/<int:user_id>', methods=['DELETE'])
 @jwt_required()
 def delete_user(user_id):
     current_user_id = get_jwt_identity()

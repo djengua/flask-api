@@ -95,8 +95,9 @@ def init_db():
 
 def register_blueprints():
     from app.routes.auth import auth_bp
+    from app.routes.user import users_bp
     # Si tienes blueprint de usuarios, también lo importarías aquí
     # from app.routes.users import users_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api')
-    # app.register_blueprint(users_bp, url_prefix='/api/users')
+    app.register_blueprint(users_bp, url_prefix='/api/users')
