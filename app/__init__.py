@@ -7,19 +7,10 @@ from datetime import timedelta
 import os
 import sys
 
-import os
-import sys
 
-# Imprimir todas las variables de entorno (ocultando valores sensibles)
-print("=== VARIABLES DE ENTORNO DISPONIBLES ===")
-for key in os.environ:
-    if key in ['DATABASE_URL', 'JWT_SECRET_KEY']:
-        print(f"{key}: ***valor oculto***")
-    else:
-        print(f"{key}: {os.environ[key]}")
-print("=======================================")
+from dotenv import load_dotenv
+load_dotenv()
 
-# Intenta leer la variable DATABASE_URL de múltiples formas
 database_url = None
 
 # Inicializar Flask
@@ -27,6 +18,9 @@ app = Flask(__name__)
 
 # IMPORTANTE: Railway proporciona la variable DATABASE_URL
 database_url = os.environ.get('DATABASE_URL')
+print('si')
+print('database_url')
+print(database_url)
 if database_url:
     # Railway usa postgres:// pero SQLAlchemy necesita postgresql://
     if database_url.startswith('postgres://'):
@@ -74,30 +68,35 @@ except Exception as e:
 def home():
     return jsonify({'message': 'Welcome to the User Management API'}), 200
 
-# Ruta para depuración
+
+@app.route('/routes')
+def list_routes():
+    routes = []
+    for rule in app.url_map.iter_rules():
+        routes.append({
+            'endpoint': rule.endpoint,
+            'methods': list(rule.methods),
+            'path': str(rule)
+        })
+    return jsonify(routes), 200
 
 
-# @app.route('/debug')
-# def debug():
-#     config = {
-#         'SQLALCHEMY_DATABASE_URI': app.config['SQLALCHEMY_DATABASE_URI'].replace(
-#             os.environ.get('DB_PASS', ''), '****') if 'SQLALCHEMY_DATABASE_URI' in app.config else None,
-#         'DATABASE_URL_EXISTS': 'DATABASE_URL' in os.environ,
-#         'ENV_VARS': [key for key in os.environ.keys()
-#                      if not ('password' in key.lower() or 'secret' in key.lower() or 'key' in key.lower())]
-#     }
+def init_db():
+    with app.app_context():
+        # Importar todos los modelos aquí
+        from app.models.roles import Role
+        from app.models.users import User
+        # Importa cualquier otro modelo que tengas
 
-#     # Probar conexión a la base de datos
-#     db_status = {}
-#     try:
-#         result = db.session.execute('SELECT 1').scalar()
-#         db_status['connected'] = True
-#         db_status['result'] = result
-#     except Exception as e:
-#         db_status['connected'] = False
-#         db_status['error'] = str(e)
+        # Crear todas las tablas
+        db.create_all()
+        print("Base de datos inicializada correctamente")
 
-#     return jsonify({
-#         'app_config': config,
-#         'db_status': db_status
-#     })
+
+def register_blueprints():
+    from app.routes.auth import auth_bp
+    # Si tienes blueprint de usuarios, también lo importarías aquí
+    # from app.routes.users import users_bp
+
+    app.register_blueprint(auth_bp, url_prefix='/api')
+    # app.register_blueprint(users_bp, url_prefix='/api/users')

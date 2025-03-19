@@ -3,8 +3,10 @@ from flask_jwt_extended import create_access_token
 from app import bcrypt, db
 from app.models.users import User
 
+auth_bp = Blueprint('auth', __name__)
 
-@app.route('/api/register', methods=['POST'])
+
+@auth_bp.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
 
@@ -12,12 +14,8 @@ def register():
 
     # Validar datos requeridos
 
-    if not data or not data.get('username') or not data.get('email') or not data.get('password'):
+    if not data or not data.get('email') or not data.get('password'):
         return jsonify({'message': 'Missing required fields'}), 400
-
-    # Verificar si el usuario o email ya existe
-    if User.query.filter_by(username=data['username']).first():
-        return jsonify({'message': 'Username already exists'}), 409
 
     if User.query.filter_by(email=data['email']).first():
         return jsonify({'message': 'Email already registered'}), 409
@@ -29,7 +27,8 @@ def register():
         name=data['name'],
         lastname=data['lastname'],
         email=data['email'],
-        password=hashed_password
+        password=hashed_password,
+        role_id=3
     )
 
     # Guardar en la base de datos
@@ -41,7 +40,7 @@ def register():
 # Login de usuario
 
 
-@app.route('/api/login', methods=['POST'])
+@auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
 
