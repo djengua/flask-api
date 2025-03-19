@@ -8,6 +8,8 @@ from app.models.users import User
 def register():
     data = request.get_json()
 
+    print(data)
+
     # Validar datos requeridos
 
     if not data or not data.get('username') or not data.get('email') or not data.get('password'):
@@ -24,7 +26,8 @@ def register():
     hashed_password = bcrypt.generate_password_hash(
         data['password']).decode('utf-8')
     new_user = User(
-        username=data['username'],
+        name=data['name'],
+        lastname=data['lastname'],
         email=data['email'],
         password=hashed_password
     )
@@ -43,11 +46,11 @@ def login():
     data = request.get_json()
 
     # Validar datos requeridos
-    if not data or not data.get('username') or not data.get('password'):
-        return jsonify({'message': 'Missing username or password'}), 400
+    if not data or not data.get('email') or not data.get('password'):
+        return jsonify({'message': 'Missing email or password'}), 400
 
     # Buscar usuario
-    user = User.query.filter_by(username=data['username']).first()
+    user = User.query.filter_by(email=data['email']).first()
 
     # Verificar credenciales
     if user and bcrypt.check_password_hash(user.password, data['password']):

@@ -15,9 +15,10 @@ def get_current_user():
 
     return jsonify({
         'id': user.id,
-        'username': user.username,
         'email': user.email,
-        'is_active': user.is_active
+        'name': user.name,
+        'lastname': user.lastname,
+        'active': user.active
     }), 200
 
 # Obtener todos los usuarios (para administradores)
@@ -32,9 +33,10 @@ def get_all_users():
     for user in users:
         user_list.append({
             'id': user.id,
-            'username': user.username,
             'email': user.email,
-            'is_active': user.is_active
+            'name': user.name,
+            'lastname': user.lastname,
+            'active': user.is_active
         })
 
     return jsonify(user_list), 200
@@ -52,9 +54,10 @@ def get_user(user_id):
 
     return jsonify({
         'id': user.id,
-        'username': user.username,
         'email': user.email,
-        'is_active': user.is_active
+        'name': user.name,
+        'lastname': user.lastname,
+        'active': user.active
     }), 200
 
 # Actualizar usuario
@@ -76,13 +79,11 @@ def update_user(user_id):
 
     data = request.get_json()
 
-    # Actualizar campos enviados
-    if data.get('username'):
-        # Verificar disponibilidad del nuevo username
-        existing_user = User.query.filter_by(username=data['username']).first()
-        if existing_user and existing_user.id != user_id:
-            return jsonify({'message': 'Username already taken'}), 409
-        user.username = data['username']
+    if data.get('name'):
+        user.name = data['name']
+
+    if data.get('lastname'):
+        user.lastname = data['lastname']
 
     if data.get('email'):
         # Verificar disponibilidad del nuevo email
@@ -101,9 +102,10 @@ def update_user(user_id):
     return jsonify({
         'message': 'User updated successfully',
         'id': user.id,
-        'username': user.username,
         'email': user.email,
-        'is_active': user.is_active
+        'name': user.name,
+        'lastname': user.lastname,
+        'active': user.active
     }), 200
 
 # Eliminar usuario
