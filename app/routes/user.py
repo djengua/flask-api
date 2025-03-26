@@ -84,16 +84,16 @@ def update_user(user_id):
     if data.get('lastname'):
         user.lastname = data['lastname']
 
-    if data.get('email'):
-        # Verificar disponibilidad del nuevo email
-        existing_user = User.query.filter_by(email=data['email']).first()
-        if existing_user and existing_user.id != user_id:
-            return jsonify({'message': 'Email already registered'}), 409
-        user.email = data['email']
+    # if data.get('email'):
+    #     # Verificar disponibilidad del nuevo email
+    #     existing_user = User.query.filter_by(email=data['email']).first()
+    #     if existing_user and existing_user.id != user_id:
+    #         return jsonify({'message': 'Email already registered'}), 409
+    #     user.email = data['email']
 
-    if data.get('password'):
-        user.password = bcrypt.generate_password_hash(
-            data['password']).decode('utf-8')
+    # if data.get('password'):
+    #     user.password = bcrypt.generate_password_hash(
+    #         data['password']).decode('utf-8')
 
     # Guardar cambios
     db.session.commit()
