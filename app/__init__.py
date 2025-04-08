@@ -18,7 +18,12 @@ database_url = None
 app = Flask(__name__)
 
 CORS(app, resources={r"/api/*": {
-    "origins": ["https://djengua.com", "http://localhost:8080"],
+    "origins": [
+        "https://djengua.com",
+        "http://localhost:8081",
+        "http://localhost",
+        "http://10.3.12.240:8081"
+        ],
     "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     "allow_headers": ["Content-Type", "Authorization"]
 }})
@@ -80,18 +85,21 @@ def init_db():
         # Importar todos los modelos aquí
         from app.models.roles import Role
         from app.models.users import User
-        # Importa cualquier otro modelo que tengas
+        from app.models.companies import Company
 
         # Crear todas las tablas
         db.create_all()
+        Role.init_roles(db.session)
         print("Base de datos inicializada correctamente")
 
 
 def register_blueprints():
     from app.routes.auth import auth_bp
     from app.routes.user import users_bp
+    from app.routes.companies import companies_bp
     # Si tienes blueprint de usuarios, también lo importarías aquí
     # from app.routes.users import users_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api')
     app.register_blueprint(users_bp, url_prefix='/api/users')
+    app.register_blueprint(companies_bp, url_prefix='/api/companies')

@@ -2,6 +2,7 @@ from flask import request, jsonify, Blueprint
 from flask_jwt_extended import create_access_token
 from app import bcrypt, db
 from app.models.users import User
+from app.models.roles import ROLE_USER
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -10,15 +11,15 @@ auth_bp = Blueprint('auth', __name__)
 def register():
     data = request.get_json()
 
-    print(data)
 
     # Validar datos requeridos
-
     if not data or not data.get('email') or not data.get('password'):
         return jsonify({'message': 'Missing required fields'}), 400
 
     if User.query.filter_by(email=data['email']).first():
         return jsonify({'message': 'Email already registered'}), 409
+    
+
 
     # Crear nuevo usuario
     hashed_password = bcrypt.generate_password_hash(
@@ -28,7 +29,7 @@ def register():
         lastname=data['lastname'],
         email=data['email'],
         password=hashed_password,
-        role_id=3
+        role_id=ROLE_USER
     )
 
     # Guardar en la base de datos

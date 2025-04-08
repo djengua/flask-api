@@ -1,6 +1,10 @@
 from app import db
 from datetime import datetime
 
+user_companies = db.Table('user_companies',
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
+    db.Column('company_id', db.Integer, db.ForeignKey('companies.id'), primary_key=True)
+)
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -9,10 +13,14 @@ class User(db.Model):
     password = db.Column(db.String(128), nullable=False)
     name = db.Column(db.String(120))
     lastname = db.Column(db.String(120))
-    role_id = db.Column(db.Integer, db.ForeignKey(
-        'roles.id'), nullable=True)  # Relación con Role
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
     active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    primary_company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=True)
+    
+    primary_company = db.relationship('Company', foreign_keys=[primary_company_id])
+    companies = db.relationship('Company', secondary=user_companies, 
+                               backref=db.backref('users', lazy='dynamic'))
 
     def __repr__(self):
         return f'<User {self.email}>'
@@ -25,6 +33,6 @@ class User(db.Model):
             'role': self.role,
             'created_at': self.created_at,
             'active': self.active,
-            # 'company_count': self.companies.count(),
-            # 'primary_company_id': self.primary_company_id
+            'company_count': len(self.companies),
+            'primary_company_id': self.primary_company_id
         }
