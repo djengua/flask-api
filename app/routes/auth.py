@@ -11,15 +11,23 @@ auth_bp = Blueprint('auth', __name__)
 def register():
     data = request.get_json()
 
-
     # Validar datos requeridos
-    if not data or not data.get('email') or not data.get('password'):
-        return jsonify({'message': 'Missing required fields'}), 400
-
-    if User.query.filter_by(email=data['email']).first():
-        return jsonify({'message': 'Email already registered'}), 409
+    if not data:
+        return jsonify({'message': 'No se proporcionaron datos'}), 400
     
+    # Verificar campos obligatorios
+    required_fields = ['email', 'password', 'name', 'lastname']
+    missing_fields = [field for field in required_fields if not data.get(field)]
+    
+    if missing_fields:
+        return jsonify({
+            'message': 'Faltan campos requeridos', 
+            'missing_fields': missing_fields
+        }), 400
 
+    # Verificar si el correo ya está registrado
+    if User.query.filter_by(email=data['email']).first():
+        return jsonify({'message': 'El correo electrónico ya está registrado'}), 409
 
     # Crear nuevo usuario
     hashed_password = bcrypt.generate_password_hash(
@@ -36,11 +44,10 @@ def register():
     db.session.add(new_user)
     db.session.commit()
 
-    return jsonify({'message': 'User registered successfully'}), 201
+    return jsonify({'message': 'Usuario registrado exitosamente', 'user_id': new_user.id}), 201
+
 
 # Login de usuario
-
-
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -51,6 +58,11 @@ def login():
 
     # Buscar usuario
     user = User.query.filter_by(email=data['email']).first()
+
+    print('login')
+    print(data)
+
+    print(user)
 
     # Verificar credenciales
     if user and bcrypt.check_password_hash(user.password, data['password']):

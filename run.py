@@ -2,6 +2,7 @@ import os
 from app import app, register_blueprints, init_db
 
 
+
 try:
     init_db()
 except Exception as e:

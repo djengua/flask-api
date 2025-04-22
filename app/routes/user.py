@@ -15,14 +15,48 @@ def get_current_user():
     user = User.query.get(user_id)
 
     if not user:
-        return jsonify({'message': 'User not found'}), 404
+        return jsonify({'message': 'Usuario no encontrado'}), 404
+
+    # Obtener información del rol
+    role = Role.query.get(user.role_id)
+    role_name = role.name if role else "desconocido"
+    
+    # Obtener compañías asociadas
+    companies = []
+    for company in user.companies:
+        companies.append({
+            'id': company.id,
+            'name': company.name,
+            'description': company.description,
+            'active': company.active
+        })
+    
+    # Obtener compañía principal
+    primary_company = None
+    if user.primary_company_id:
+        company = Company.query.get(user.primary_company_id)
+        if company:
+            primary_company = {
+                'id': company.id,
+                'name': company.name,
+                'description': company.description,
+                'active': company.active
+            }
 
     return jsonify({
         'id': user.id,
         'email': user.email,
         'name': user.name,
         'lastname': user.lastname,
-        'active': user.active
+        'role': {
+            'id': user.role_id,
+            'name': role_name
+        },
+        'active': user.active,
+        'created_at': user.created_at.isoformat() if user.created_at else None,
+        'companies': companies,
+        'primary_company': primary_company,
+        'company_count': len(companies)
     }), 200
 
 

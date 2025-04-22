@@ -93,40 +93,52 @@ def add_company():
     
     # El usuario de contacto es opcional
     user_id = data.get('user_id')
-    if user_id and not User.query.get(user_id):
+    user = User.query.get(user_id)
+    if user_id and not user: # User.query.get(user_id):
         return jsonify({'message': 'Usuario de contacto no encontrado'}), 404
     
     # Crear una nueva instancia de Company
     company = Company(
         name=data.get('name'),
         description=data.get('description'),
-        user_id=user_id or current_user.id,  # Si no se especifica, usar el usuario actual
+        user_id=user_id,
         active=data.get('active', True)
     )
     
+
+    print(1)
     # Agregar a la sesión y guardar
     db.session.add(company)
     db.session.commit()
     
+    print(2)
+    #TODO: DJENGUA al insertar una nueva company falla aqui.
     # Asociar usuarios si se proporcionan
-    if 'user_ids' in data and data['user_ids']:
-        users = User.query.filter(User.id.in_(data['user_ids'])).all()
+    if 'user_id' in data and data['user_id']:
+        users = User.query.filter(User.id.in_(user_id)).all()
+        print('users')
+        print(users)
         for user in users:
             user.companies.append(company)
         db.session.commit()
     
-    # Asociar al creador automáticamente si es un usuario
-    if current_user not in company.users:
-        current_user.companies.append(company)
-        db.session.commit()
+    print(3)
+    # # Asociar al creador automáticamente si es un usuario
+    # if current_user not in company.users:
+    #     current_user.companies.append(company)
+    #     db.session.commit()
     
+    print(4)
     return jsonify({
         'message': 'Compañía creada exitosamente',
         'company': {
             'id': company.id,
             'name': company.name,
             'description': company.description,
-            'user_id': company.user_id,
+            'user': {
+                'id': company.user_id,
+                'name': user.name,
+            },
             'created_at': company.created_at.isoformat(),
             'active': company.active
         }
