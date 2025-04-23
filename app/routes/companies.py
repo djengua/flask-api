@@ -4,9 +4,11 @@ from app import db, bcrypt
 from app.models.companies import Company
 from app.models.users import User
 from app.models.roles import Role, ROLE_SUPERADMIN
+import pytz
+
+mexico_timezone = pytz.timezone('America/Mexico_City')
 
 companies_bp = Blueprint('companies', __name__)
-
 
 # Obtener todos las compañias (para administradores)
 @companies_bp.route('/all', methods=['GET'])
@@ -22,38 +24,32 @@ def get_all_companies():
     # Determinar qué compañías mostrar según el rol
     if current_user.role_id == ROLE_SUPERADMIN:
         # Los superadmins ven todas las compañías
-        companies = Company.query.all()
+        companies = Company.query.order_by(Company.id).all()
     else:
         # Los usuarios normales y admins solo ven sus compañías asociadas
-        companies = current_user.companies
+        companies = current_user.companies.order_by(Company.id).all()
     
     company_list = []
     for company in companies:
+        mexico_time = company.created_at.astimezone(mexico_timezone)
         # Obtener información del usuario creador (si existe)
-        creator_info = None
+        user_info = None
         if company.user_id:
             creator = User.query.get(company.user_id)
             if creator:
-                creator_info = {
+                user_info = {
                     'id': creator.id,
                     'name': f"{creator.name} {creator.lastname}".strip(),
                     'email': creator.email
                 }
         
-        # Contar usuarios asociados a esta compañía
-        user_count = 0
-        if hasattr(company, 'users'):
-            user_count = company.users.count()
-        
         company_list.append({
             'id': company.id,
             'name': company.name,
             'description': company.description,
-            'creator': creator_info,
-            'created_at': company.created_at,
-            'active': company.active,
-            'user_count': user_count,
-            'is_primary': company.id == current_user.primary_company_id
+            'user': user_info,
+            'created_at': mexico_time.isoformat(), # company.created_at,
+            'active': company.active
         })
 
     return jsonify(company_list), 200
@@ -67,6 +63,9 @@ def add_company():
     current_user = User.query.get(current_user_id)
     if not current_user:
         return jsonify({'message': 'Usuario no encontrado'}), 404
+    
+
+    # {"name":"powerman","description":"powerman","active":false}
     
     # Obtener el rol del usuario
     role = Role.query.get(current_user.role_id)
@@ -105,44 +104,37 @@ def add_company():
         active=data.get('active', True)
     )
     
-
-    print(1)
     # Agregar a la sesión y guardar
     db.session.add(company)
     db.session.commit()
+
+    mexico_time = company.created_at.astimezone(mexico_timezone)
     
-    print(2)
-    #TODO: DJENGUA al insertar una nueva company falla aqui.
     # Asociar usuarios si se proporcionan
     if 'user_id' in data and data['user_id']:
-        users = User.query.filter(User.id.in_(user_id)).all()
-        print('users')
-        print(users)
+        users = User.query.filter(User.id.in_([user_id])).all()
         for user in users:
             user.companies.append(company)
         db.session.commit()
-    
-    print(3)
-    # # Asociar al creador automáticamente si es un usuario
-    # if current_user not in company.users:
-    #     current_user.companies.append(company)
-    #     db.session.commit()
-    
-    print(4)
-    return jsonify({
-        'message': 'Compañía creada exitosamente',
-        'company': {
-            'id': company.id,
-            'name': company.name,
-            'description': company.description,
-            'user': {
-                'id': company.user_id,
-                'name': user.name,
-            },
-            'created_at': company.created_at.isoformat(),
-            'active': company.active
+
+    response_data = {
+        'id': company.id,
+        'name': company.name,
+        'description': company.description,
+        'created_at': mexico_time.isoformat(), # company.created_at.isoformat(),
+        'active': company.active       
+    }
+
+    # Only add user info if a user exists
+    if user:
+        response_data['user'] = {
+            'id': user.id,
+            'name': user.name
         }
-    }), 201
+    else:
+        response_data['user'] = None
+
+    return jsonify(response_data), 201
 
 @companies_bp.route('/<int:company_id>', methods=['PUT'])
 @jwt_required()
@@ -189,46 +181,76 @@ def update_company(company_id):
     
     if 'active' in data:
         company.active = data['active']
+
+    user_id = data.get('user_id')
+    
+    if 'user_id' in data and data['user_id']:
+        users = User.query.filter(User.id.in_([user_id])).all()
+        print(len(users))
+        for user in users:
+            user.companies.append(company)
+        db.session.commit()
     
     # Actualizar usuarios asociados si se proporcionan
-    if 'user_ids' in data:
-        user_ids = data['user_ids']
+    # if 'user_ids' in data:
+    #     user_ids = data['user_ids']
         
-        # Obtener los usuarios actuales
-        users_to_update = User.query.filter(User.id.in_(user_ids)).all()
-        found_ids = [user.id for user in users_to_update]
+    #     # Obtener los usuarios actuales
+    #     users_to_update = User.query.filter(User.id.in_(user_ids)).all()
+    #     found_ids = [user.id for user in users_to_update]
         
-        # Verificar que todos los IDs proporcionados existan
-        missing_ids = [id for id in user_ids if id not in found_ids]
-        if missing_ids:
-            return jsonify({'message': f'Usuarios no encontrados: {missing_ids}'}), 404
+    #     # Verificar que todos los IDs proporcionados existan
+    #     missing_ids = [id for id in user_ids if id not in found_ids]
+    #     if missing_ids:
+    #         return jsonify({'message': f'Usuarios no encontrados: {missing_ids}'}), 404
         
-        # Actualizar la relación (eliminar todos y añadir los nuevos)
-        for user in User.query.all():
-            if company in user.companies:
-                user.companies.remove(company)
+    #     # Actualizar la relación (eliminar todos y añadir los nuevos)
+    #     for user in User.query.all():
+    #         if company in user.companies:
+    #             user.companies.remove(company)
         
-        for user in users_to_update:
-            user.companies.append(company)
+    #     for user in users_to_update:
+    #         user.companies.append(company)
         
-        # Verificar usuarios con esta compañía como principal
-        users_with_primary = User.query.filter_by(primary_company_id=company.id).all()
-        for user in users_with_primary:
-            if user.id not in user_ids:
-                # Si el usuario ya no está asociado, eliminar como compañía principal
-                user.primary_company_id = None
+    #     # Verificar usuarios con esta compañía como principal
+    #     users_with_primary = User.query.filter_by(primary_company_id=company.id).all()
+    #     for user in users_with_primary:
+    #         if user.id not in user_ids:
+    #             # Si el usuario ya no está asociado, eliminar como compañía principal
+    #             user.primary_company_id = None
     
     # Guardar cambios
     db.session.commit()
-    
-    return jsonify({
-        'message': 'Compañía actualizada exitosamente',
-        'company': {
-            'id': company.id,
-            'name': company.name,
-            'description': company.description,
-            'user_id': company.user_id,
-            'created_at': company.created_at.isoformat(),
-            'active': company.active
+
+    mexico_time = company.created_at.astimezone(mexico_timezone)
+
+    response_data = {
+        'id': company.id,
+        'name': company.name,
+        'description': company.description,
+        'created_at': mexico_time.isoformat(), # company.created_at.isoformat(),
+        'active': company.active
+    }
+
+    # Only add user info if a user exists
+    if user:
+        response_data['user'] = {
+            'id': user.id,
+            'name': user.name
         }
-    }), 200
+    else:
+        response_data['user'] = None
+
+    return jsonify(response_data), 200
+    
+    # return jsonify({
+    #     'message': 'Compañía actualizada exitosamente',
+    #     'company': {
+    #         'id': company.id,
+    #         'name': company.name,
+    #         'description': company.description,
+    #         'user_id': company.user_id,
+    #         'created_at': company.created_at.isoformat(),
+    #         'active': company.active
+    #     }
+    # }), 200

@@ -23,16 +23,19 @@ class User(db.Model):
                                backref=db.backref('users', lazy='dynamic'))
 
     def __repr__(self):
-        return f'<User {self.email}>'
+        return f'<User {self.email} {self.name}>'
 
     def to_dict(self):
         return {
             'id': self.id,
             'email': self.email,
             'name': self.name,
-            'role': self.role,
+            'lastname': self.lastname,
+            'role_id': self.role_id,
+            'role': self.role_obj.to_dict() if hasattr(self, 'role_obj') and self.role_obj else None,
             'created_at': self.created_at,
             'active': self.active,
-            'company_count': len(self.companies),
-            'primary_company_id': self.primary_company_id
+            'primary_company_id': self.primary_company_id,
+            'primary_company': self.primary_company.to_dict() if self.primary_company else None,
+            'companies': [company.to_dict() for company in self.companies] if self.companies else []
         }
